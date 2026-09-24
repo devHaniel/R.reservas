@@ -1,0 +1,16 @@
+# Build output
+bin/
+obj/
+
+# Local development configuration and secrets
+appsettings.Development.json
+appsettings.Local.json
+appsettings.*.local.json
+
+# User-specific files
+*.user
+*.suo
+.vs/
+
+# OS files
+.DS_Store
