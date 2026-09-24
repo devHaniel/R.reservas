@@ -18,5 +18,4 @@ public class RecursoReservable
     public TimeSpan HorarioCierreDefault { get; set; }    // ej: 23:00
     
     public ICollection<TipoServicio> ServiciosDisponibles { get; set; } = new List<TipoServicio>();
-    public ICollection<Reserva> Reservas { get; set; } = new List<Reserva>();
 }

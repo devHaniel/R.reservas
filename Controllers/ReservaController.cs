@@ -72,6 +72,10 @@ public class ReservaController : ControllerBase
         {
             return NotFound(exception.Message);
         }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(exception.Message);
+        }
     }
 
     [HttpDelete("{id:int}")]

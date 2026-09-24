@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Reservas.Data;
@@ -11,9 +12,11 @@ using Reservas.Data;
 namespace Reservas.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260924040432_EliminarRecursoReservableDeReserva")]
+    partial class EliminarRecursoReservableDeReserva
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -242,12 +245,17 @@ namespace Reservas.Migrations
                     b.Property<DateTime>("FechaHoraInicio")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("RecursoReservableId")
+                        .HasColumnType("integer");
+
                     b.Property<int>("TipoServicioId")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ClienteId");
+
+                    b.HasIndex("RecursoReservableId");
 
                     b.HasIndex("TipoServicioId");
 
@@ -418,6 +426,10 @@ namespace Reservas.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Reservas.Models.Entities.RecursoReservable", null)
+                        .WithMany("Reservas")
+                        .HasForeignKey("RecursoReservableId");
+
                     b.HasOne("Reservas.Models.Entities.TipoServicio", "TipoServicio")
                         .WithMany()
                         .HasForeignKey("TipoServicioId")
@@ -447,6 +459,8 @@ namespace Reservas.Migrations
 
             modelBuilder.Entity("Reservas.Models.Entities.RecursoReservable", b =>
                 {
+                    b.Navigation("Reservas");
+
                     b.Navigation("ServiciosDisponibles");
                 });
 #pragma warning restore 612, 618

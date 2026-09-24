@@ -57,7 +57,7 @@ public class RecursoReservableService : IRecursoReservableService
     {
         var recursos = await _context.RecursosReservables
             .AsNoTracking()
-            .Where(r => r.TipoDeporte.Contains(tipoDeporte))
+            .Where(r => r.TipoDeporte.ToUpper().Contains(tipoDeporte.ToUpper()))
             .OrderBy(r => r.Nombre)
             .ToListAsync();
 

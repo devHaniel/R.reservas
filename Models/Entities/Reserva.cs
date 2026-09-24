@@ -9,9 +9,6 @@ public class Reserva
     public int ClienteId { get; set; }
     public Cliente Cliente { get; set; } = null!;
     
-    public int RecursoReservableId { get; set; }
-    public RecursoReservable RecursoReservable { get; set; } = null!;
-    
     public int TipoServicioId { get; set; }
     public TipoServicio TipoServicio { get; set; } = null!;
     
