@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Reservas.Common.DTOs.Auth;
 using Reservas.Services.Interfaces;
 
@@ -6,6 +7,7 @@ namespace Reservas.Controllers;
 
 [ApiController]
 [Route("api/auth")]
+[EnableRateLimiting("fixed-policy")]
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
@@ -38,10 +40,20 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login(IniciarSesionDto dto)
     {
-        var token = await _authService.LoginAsync(dto);
-        if (token is null)
+        var tokens = await _authService.LoginAsync(dto);
+        if (tokens is null)
             return Unauthorized(new { mensaje = "Email o contraseña incorrectos" });
 
-        return Ok(new { accessToken = token });
+        return Ok(tokens);
+    }
+
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh(RefreshTokenRequestDto dto)
+    {
+        var tokens = await _authService.RefreshTokenAsync(dto);
+        if (tokens is null)
+            return Unauthorized();
+
+        return Ok(tokens);
     }
 }

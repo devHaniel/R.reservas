@@ -5,5 +5,6 @@ namespace Reservas.Services.Interfaces;
 public interface IAuthService
 {
     Task<(bool Succeeded, int? UserId, IEnumerable<string> Errors)> RegisterAsync(RegistroUsuarioDto dto);
-    Task<string?> LoginAsync(IniciarSesionDto dto);
+    Task<AuthTokensDto?> LoginAsync(IniciarSesionDto dto);
+    Task<AuthTokensDto?> RefreshTokenAsync(RefreshTokenRequestDto dto);
 }

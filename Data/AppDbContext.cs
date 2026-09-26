@@ -10,6 +10,7 @@ public class AppDbContext : IdentityDbContext<Usuario, IdentityRole<int>, int>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
+    public DbSet<HistorialRefreshToken> HistorialRefreshTokens {get; set;}
     public DbSet<Cliente> Clientes { get; set; }
     public DbSet<RecursoReservable> RecursosReservables { get; set; }
     public DbSet<TipoServicio> TiposServicio { get; set; }
