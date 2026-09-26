@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Reservas.Common.DTOs.Cliente;
 using Reservas.Common.Paginacion;
@@ -5,6 +6,7 @@ using Reservas.Services.Interfaces;
 
 namespace Reservas.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/clientes")]
 public class ClienteController : ControllerBase

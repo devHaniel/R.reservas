@@ -29,6 +29,17 @@ builder.Services.AddIdentityCore<Usuario>(options =>
 .AddDefaultTokenProviders();
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException("JWT Key no configurada");
+var jwtIssuer = builder.Configuration["Jwt:Issuer"]
+    ?? throw new InvalidOperationException("JWT Issuer no configurado");
+var jwtAudience = builder.Configuration["Jwt:Audience"]
+    ?? throw new InvalidOperationException("JWT Audience no configurado");
+var accessTokenMinutes = builder.Configuration.GetValue<int>("Jwt:AccessTokenMinutes");
+
+if (Encoding.UTF8.GetByteCount(jwtKey) < 32)
+    throw new InvalidOperationException("JWT Key debe tener al menos 32 bytes");
+
+if (accessTokenMinutes <= 0)
+    throw new InvalidOperationException("Jwt:AccessTokenMinutes debe ser mayor que cero");
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -39,10 +50,10 @@ builder.Services
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(jwtKey)),
-            ValidateIssuer = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidateAudience = true,
-            ValidAudience = builder.Configuration["Jwt:Audience"],
+            ValidateIssuer = false,
+            ValidIssuer = jwtIssuer,
+            ValidateAudience = false ,
+            ValidAudience = jwtAudience,
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero
         };
@@ -57,11 +68,11 @@ builder.Services.AddScoped<IRecursoReservableService, RecursoReservableService>(
 builder.Services.AddScoped<IClienteService, ClienteService>();
 builder.Services.AddScoped<IReservaService, ReservaService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IRealtimeNotificacionService, RealtimeNotificacionService>();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
-builder.Services.AddAuthorization();
 
 var app = builder.Build();
 

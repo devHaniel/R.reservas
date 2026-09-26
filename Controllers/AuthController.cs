@@ -34,4 +34,14 @@ public class AuthController : ControllerBase
             mensaje = "Usuario creado correctamente"
         });
     }
+
+    [HttpPost("login")]
+    public async Task<IActionResult> Login(IniciarSesionDto dto)
+    {
+        var token = await _authService.LoginAsync(dto);
+        if (token is null)
+            return Unauthorized(new { mensaje = "Email o contraseña incorrectos" });
+
+        return Ok(new { accessToken = token });
+    }
 }
