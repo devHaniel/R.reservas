@@ -16,9 +16,15 @@ public class ClienteService : IClienteService
         _context = context;
     }
 
-    public async Task<PagedResult<ClienteDto>> GetAllAsync(int pagina = 1, int cantidad = 10)
+    public async Task<PagedResult<ClienteDto>> GetAllAsync(
+        int usuarioId,
+        bool esAdmin,
+        int pagina = 1,
+        int cantidad = 10)
     {
-        var query =  _context.Clientes.AsNoTracking();
+        var query = _context.Clientes
+            .AsNoTracking()
+            .Where(cliente => esAdmin || cliente.UsuarioId == usuarioId);
 
         var total = await query.CountAsync();
 
@@ -45,11 +51,11 @@ public class ClienteService : IClienteService
         };
     }
 
-    public async Task<ClienteDto?> GetByIdAsync(int id)
+    public async Task<ClienteDto?> GetByIdAsync(int id, int usuarioId, bool esAdmin)
     {
         var cliente = await _context.Clientes
             .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == id);
+            .FirstOrDefaultAsync(c => c.Id == id && (esAdmin || c.UsuarioId == usuarioId));
 
         if (cliente is null)
             return null;
@@ -63,11 +69,13 @@ public class ClienteService : IClienteService
         };
     }
 
-    public async Task<ClienteDto?> GetByEmailAsync(string email)
+    public async Task<ClienteDto?> GetByEmailAsync(string email, int usuarioId, bool esAdmin)
     {
         var cliente = await _context.Clientes
             .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Email != null && c.Email.ToUpper() == email.ToUpper());
+            .FirstOrDefaultAsync(c => c.Email != null
+                && c.Email.ToUpper() == email.ToUpper()
+                && (esAdmin || c.UsuarioId == usuarioId));
 
         if (cliente is null)
             return null;
@@ -81,10 +89,11 @@ public class ClienteService : IClienteService
         };
     }
 
-    public async Task<ClienteDto> CreateAsync(ClienteCrearDto dto)
+    public async Task<ClienteDto> CreateAsync(ClienteCrearDto dto, int usuarioId, bool esAdmin)
     {
         var cliente = new Cliente
         {
+            UsuarioId = esAdmin ? null : usuarioId,
             Nombre = dto.Nombre,
             Telefono = dto.Telefono,
             Email = dto.Email
@@ -102,10 +111,10 @@ public class ClienteService : IClienteService
         };
     }
 
-    public async Task<ClienteDto> UpdateAsync(ClienteActualizarDto dto)
+    public async Task<ClienteDto> UpdateAsync(ClienteActualizarDto dto, int usuarioId, bool esAdmin)
     {
         var cliente = await _context.Clientes
-            .FirstOrDefaultAsync(c => c.Id == dto.Id);
+            .FirstOrDefaultAsync(c => c.Id == dto.Id && (esAdmin || c.UsuarioId == usuarioId));
 
         if (cliente is null)
             throw new KeyNotFoundException("Cliente no encontrado");
@@ -125,10 +134,10 @@ public class ClienteService : IClienteService
         };
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, int usuarioId, bool esAdmin)
     {
         var cliente = await _context.Clientes
-            .FirstOrDefaultAsync(c => c.Id == id);
+            .FirstOrDefaultAsync(c => c.Id == id && (esAdmin || c.UsuarioId == usuarioId));
 
         if (cliente is null)
             return false;

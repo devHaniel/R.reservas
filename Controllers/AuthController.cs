@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Authorization;
 using Reservas.Common.DTOs.Auth;
 using Reservas.Services.Interfaces;
 
@@ -17,6 +18,7 @@ public class AuthController : ControllerBase
         _authService = authService;
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegistroUsuarioDto dto)
     {

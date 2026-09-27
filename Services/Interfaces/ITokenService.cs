@@ -6,7 +6,7 @@ namespace Reservas.Services.Interfaces;
 
 public interface ITokenService
 {
-    string GenerarToken(int idUsuario);
+    string GenerarToken(int idUsuario, IEnumerable<string> roles);
     string GenerarRefreshToken();
     Task<HistorialRefreshToken> GuardarHistorialRefreshToken(int idUsuario, string token, string refreshToken);
     Task<HistorialRefreshToken?> DevolverRefreshToken(string refreshToken);

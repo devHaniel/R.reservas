@@ -38,6 +38,13 @@ public class AuthService : IAuthService
         if (!result.Succeeded)
             return (false, null, result.Errors.Select(error => error.Description));
 
+        var roleResult = await _userManager.AddToRoleAsync(usuario, "Vendedor");
+        if (!roleResult.Succeeded)
+        {
+            await _userManager.DeleteAsync(usuario);
+            return (false, null, roleResult.Errors.Select(error => error.Description));
+        }
+
         return (true, usuario.Id, []);
     }
 
@@ -47,7 +54,8 @@ public class AuthService : IAuthService
         if (usuario is null || !await _userManager.CheckPasswordAsync(usuario, dto.Password))
             return null;
 
-        var accessToken = _tokenService.GenerarToken(usuario.Id);
+        var roles = await _userManager.GetRolesAsync(usuario);
+        var accessToken = _tokenService.GenerarToken(usuario.Id, roles);
         var refreshToken = _tokenService.GenerarRefreshToken();
         var historial = await _tokenService.GuardarHistorialRefreshToken(
             usuario.Id,
@@ -79,7 +87,8 @@ public class AuthService : IAuthService
         if (usuario is null)
             return null;
 
-        var accessToken = _tokenService.GenerarToken(usuario.Id);
+        var roles = await _userManager.GetRolesAsync(usuario);
+        var accessToken = _tokenService.GenerarToken(usuario.Id, roles);
         var refreshToken = _tokenService.GenerarRefreshToken();
         await using var transaction = await _context.Database.BeginTransactionAsync();
 

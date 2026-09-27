@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Reservas.Common.DTOs.RecursoReservable;
 using Reservas.Services.Interfaces;
@@ -6,6 +7,7 @@ namespace Reservas.Controllers;
 
 [ApiController]
 [Route("api/recursos-reservables")]
+[Authorize(Roles = "Admin,Vendedor")]
 public class RecursoReservableController : ControllerBase
 {
     private readonly IRecursoReservableService _service;
@@ -35,6 +37,7 @@ public class RecursoReservableController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<RecursoReservableDto>> Create(RecursoReservableCrearDto dto)
     {
         var recurso = await _service.CreateAsync(dto);
@@ -42,6 +45,7 @@ public class RecursoReservableController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<RecursoReservableDto>> Update(int id, RecursoReservableActualizarDto dto)
     {
         if (id != dto.Id)
@@ -58,6 +62,7 @@ public class RecursoReservableController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
         return await _service.DeleteAsync(id) ? NoContent() : NotFound();

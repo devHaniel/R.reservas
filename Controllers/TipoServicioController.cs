@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Reservas.Common.DTOs.TipoServicio;
 using Reservas.Services.Interfaces;
@@ -6,6 +7,7 @@ namespace Reservas.Controllers;
 
 [ApiController]
 [Route("api/tipos-servicio")]
+[Authorize(Roles = "Admin,Vendedor")]
 public class TipoServicioController : ControllerBase
 {
     private readonly ITipoServicioService _service;
@@ -35,6 +37,7 @@ public class TipoServicioController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<TipoServicioDto>> Create(TipoServicioCrearDto dto)
     {
         var tipo = await _service.CreateAsync(dto);
@@ -42,6 +45,7 @@ public class TipoServicioController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<TipoServicioDto>> Update(int id, TipoServicioActualizarDto dto)
     {
         if (id != dto.Id)
@@ -58,6 +62,7 @@ public class TipoServicioController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
         return await _service.DeleteAsync(id) ? NoContent() : NotFound();

@@ -6,6 +6,9 @@ public class Cliente
 {
     public int Id { get; set; }
 
+    public int? UsuarioId { get; set; }
+    public Usuario? Usuario { get; set; }
+
     [Required]
     [StringLength(100)]
     public string Nombre { get; set; } = string.Empty;

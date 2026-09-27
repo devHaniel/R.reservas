@@ -97,6 +97,66 @@ builder.Services.AddRateLimiter(options =>
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<int>>>();
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<Usuario>>();
+    foreach (var roleName in new[] { "Admin", "Vendedor" })
+    {
+        if (await roleManager.RoleExistsAsync(roleName))
+            continue;
+
+        var result = await roleManager.CreateAsync(new IdentityRole<int>(roleName));
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(", ", result.Errors.Select(error => error.Description));
+            throw new InvalidOperationException($"No se pudo crear el rol {roleName}: {errors}");
+        }
+    }
+
+    if (!(await userManager.GetUsersInRoleAsync("Admin")).Any())
+    {
+        var adminEmail = builder.Environment.IsDevelopment()
+            ? "admin@reservas.local"
+            : builder.Configuration["BootstrapAdmin:Email"];
+        var adminPassword = builder.Environment.IsDevelopment()
+            ? "Admin1234@"
+            : builder.Configuration["BootstrapAdmin:Password"];
+        if (string.IsNullOrWhiteSpace(adminEmail) || string.IsNullOrWhiteSpace(adminPassword))
+            throw new InvalidOperationException(
+                "No existe un Admin. Configure BootstrapAdmin:Email y BootstrapAdmin:Password mediante secretos.");
+
+        var admin = await userManager.FindByEmailAsync(adminEmail);
+        if (admin is null)
+        {
+            admin = new Usuario
+            {
+                Nombre = "admin",
+                Email = adminEmail,
+                UserName = builder.Environment.IsDevelopment() ? "admin" : adminEmail
+            };
+            var createResult = await userManager.CreateAsync(admin, adminPassword);
+            if (!createResult.Succeeded)
+            {
+                var errors = string.Join(", ", createResult.Errors.Select(error => error.Description));
+                throw new InvalidOperationException($"No se pudo crear el Admin inicial: {errors}");
+            }
+        }
+        else if (!await userManager.CheckPasswordAsync(admin, adminPassword))
+        {
+            throw new InvalidOperationException(
+                "La contraseña configurada para el Admin existente no coincide.");
+        }
+
+        var addRoleResult = await userManager.AddToRoleAsync(admin, "Admin");
+        if (!addRoleResult.Succeeded)
+        {
+            var errors = string.Join(", ", addRoleResult.Errors.Select(error => error.Description));
+            throw new InvalidOperationException($"No se pudo asignar el rol Admin: {errors}");
+        }
+    }
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

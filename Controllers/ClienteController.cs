@@ -1,12 +1,13 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using Reservas.Common.DTOs.Cliente;
 using Reservas.Common.Paginacion;
 using Reservas.Services.Interfaces;
 
 namespace Reservas.Controllers;
 
-[Authorize]
+[Authorize(Roles = "Admin,Vendedor")]
 [ApiController]
 [Route("api/clientes")]
 public class ClienteController : ControllerBase
@@ -26,26 +27,26 @@ public class ClienteController : ControllerBase
         if (pagina < 1 || cantidad < 1 || cantidad > 100)
             return BadRequest("La página debe ser mayor que 0 y la cantidad debe estar entre 1 y 100.");
 
-        return Ok(await _service.GetAllAsync(pagina, cantidad));
+        return Ok(await _service.GetAllAsync(UserId, EsAdmin, pagina, cantidad));
     }
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<ClienteDto>> GetById(int id)
     {
-        var cliente = await _service.GetByIdAsync(id);
+        var cliente = await _service.GetByIdAsync(id, UserId, EsAdmin);
         return cliente is null ? NotFound() : Ok(cliente);
     }
 
     [HttpGet("buscar")]
     public async Task<ActionResult<List<ClienteDto>>> GetByEmail([FromQuery] string email)
     {
-        return Ok(await _service.GetByEmailAsync(email));
+        return Ok(await _service.GetByEmailAsync(email, UserId, EsAdmin));
     }
 
     [HttpPost]
     public async Task<ActionResult<ClienteDto>> Create(ClienteCrearDto dto)
     {
-        var cliente = await _service.CreateAsync(dto);
+        var cliente = await _service.CreateAsync(dto, UserId, EsAdmin);
         return CreatedAtAction(nameof(GetById), new { id = cliente.Id }, cliente);
     }
 
@@ -57,7 +58,7 @@ public class ClienteController : ControllerBase
 
         try
         {
-            return Ok(await _service.UpdateAsync(dto));
+            return Ok(await _service.UpdateAsync(dto, UserId, EsAdmin));
         }
         catch (KeyNotFoundException exception)
         {
@@ -66,8 +67,12 @@ public class ClienteController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
-        return await _service.DeleteAsync(id) ? NoContent() : NotFound();
+        return await _service.DeleteAsync(id, UserId, EsAdmin) ? NoContent() : NotFound();
     }
+
+    private int UserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    private bool EsAdmin => User.IsInRole("Admin");
 }

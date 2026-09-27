@@ -21,7 +21,7 @@ public class TokenService : ITokenService
         _context = context;
     }
 
-    public string GenerarToken(int idUsuario)
+    public string GenerarToken(int idUsuario, IEnumerable<string> roles)
     {
         var key = _configuration["Jwt:Key"]
             ?? throw new InvalidOperationException("JWT Key no configurada");
@@ -32,8 +32,11 @@ public class TokenService : ITokenService
         var accessTokenMinutes = _configuration.GetValue<int>("Jwt:AccessTokenMinutes");
         var keyBytes = Encoding.UTF8.GetBytes(key);
 
-        var claims = new ClaimsIdentity();
-        claims.AddClaim(new Claim(ClaimTypes.NameIdentifier, idUsuario.ToString()));
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, idUsuario.ToString())
+        };
+        claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
         var credencialesToken = new SigningCredentials(
             new SymmetricSecurityKey(keyBytes),
@@ -43,7 +46,7 @@ public class TokenService : ITokenService
         // detalle del token
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Subject = claims,
+            Subject = new ClaimsIdentity(claims),
             Issuer = issuer,
             Audience = audience,
             Expires = DateTime.UtcNow.AddMinutes(accessTokenMinutes),

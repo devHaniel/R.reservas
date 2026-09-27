@@ -17,9 +17,9 @@ public class ReservaService : IReservaService
         _notificaciones = notificaciones;
     }
 
-    public async Task<List<ReservaDto>> GetAllAsync()
+    public async Task<List<ReservaDto>> GetAllAsync(int usuarioId, bool esAdmin)
     {
-        var reservas = await _context.Reservas
+        var reservas = await ReservasAccesibles(usuarioId, esAdmin)
             .Include(r => r.TipoServicio)
             .AsNoTracking()
             .OrderByDescending(r => r.FechaHoraInicio)
@@ -28,9 +28,9 @@ public class ReservaService : IReservaService
         return reservas.Select(r => Map(r)).ToList();
     }
 
-    public async Task<ReservaDto?> GetByIdAsync(int id)
+    public async Task<ReservaDto?> GetByIdAsync(int id, int usuarioId, bool esAdmin)
     {
-        var reserva = await _context.Reservas
+        var reserva = await ReservasAccesibles(usuarioId, esAdmin)
             .Include(r => r.TipoServicio)
             .AsNoTracking()
             .FirstOrDefaultAsync(r => r.Id == id);
@@ -41,9 +41,9 @@ public class ReservaService : IReservaService
         return Map(reserva);
     }
 
-    public async Task<List<ReservaDto>> GetByClienteAsync(int clienteId)
+    public async Task<List<ReservaDto>> GetByClienteAsync(int clienteId, int usuarioId, bool esAdmin)
     {
-        var reservas = await _context.Reservas
+        var reservas = await ReservasAccesibles(usuarioId, esAdmin)
             .Include(r => r.TipoServicio)
             .AsNoTracking()
             .Where(r => r.ClienteId == clienteId)
@@ -53,9 +53,12 @@ public class ReservaService : IReservaService
         return reservas.Select(r => Map(r)).ToList();
     }
 
-    public async Task<List<ReservaDto>> GetByRecursoAsync(int recursoReservableId)
+    public async Task<List<ReservaDto>> GetByRecursoAsync(
+        int recursoReservableId,
+        int usuarioId,
+        bool esAdmin)
     {
-        var reservas = await _context.Reservas
+        var reservas = await ReservasAccesibles(usuarioId, esAdmin)
             .Include(r => r.TipoServicio)
             .AsNoTracking()
             .Where(r => r.TipoServicio.RecursoReservableId == recursoReservableId)
@@ -65,8 +68,14 @@ public class ReservaService : IReservaService
         return reservas.Select(r => Map(r)).ToList();
     }
 
-    public async Task<ReservaDto> CreateAsync(ReservaCrearDto dto)
+    public async Task<ReservaDto> CreateAsync(ReservaCrearDto dto, int usuarioId, bool esAdmin)
     {
+        var clientePermitido = await _context.Clientes
+            .AnyAsync(cliente => cliente.Id == dto.ClienteId
+                && (esAdmin || cliente.UsuarioId == usuarioId));
+        if (!clientePermitido)
+            throw new KeyNotFoundException("Cliente no encontrado");
+
         var tipoServicio = await _context.TiposServicio
             .Include(t => t.RecursoReservable)
             .AsNoTracking()
@@ -109,14 +118,20 @@ public class ReservaService : IReservaService
         return Map(reserva, recursoReservable.Id);
     }
 
-    public async Task<ReservaDto> UpdateAsync(ReservaActualizarDto dto)
+    public async Task<ReservaDto> UpdateAsync(ReservaActualizarDto dto, int usuarioId, bool esAdmin)
     {
-        var reserva = await _context.Reservas
+        var reserva = await ReservasAccesibles(usuarioId, esAdmin)
             .Include(r => r.TipoServicio)
             .FirstOrDefaultAsync(r => r.Id == dto.Id);
 
         if (reserva is null)
             throw new KeyNotFoundException("Reserva no encontrada");
+
+        var clientePermitido = await _context.Clientes
+            .AnyAsync(cliente => cliente.Id == dto.ClienteId
+                && (esAdmin || cliente.UsuarioId == usuarioId));
+        if (!clientePermitido)
+            throw new KeyNotFoundException("Cliente no encontrado");
 
         var tipoServicio = await _context.TiposServicio
             .Include(t => t.RecursoReservable)
@@ -157,9 +172,9 @@ public class ReservaService : IReservaService
         return Map(reserva, recursoReservable.Id);
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, int usuarioId, bool esAdmin)
     {
-        var reserva = await _context.Reservas
+        var reserva = await ReservasAccesibles(usuarioId, esAdmin)
             .FirstOrDefaultAsync(r => r.Id == id);
 
         if (reserva is null)
@@ -171,6 +186,12 @@ public class ReservaService : IReservaService
         await _notificaciones.NotificarAsync("ReservaActualizado");
 
         return true;
+    }
+
+    private IQueryable<Reserva> ReservasAccesibles(int usuarioId, bool esAdmin)
+    {
+        return _context.Reservas
+            .Where(reserva => esAdmin || reserva.Cliente.UsuarioId == usuarioId);
     }
 
     private async Task<bool> ExisteConflictoAsync(
