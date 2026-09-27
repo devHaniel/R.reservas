@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Reservas.Data;
 using Reservas.Hubs;
+using Reservas.Middleware;
 using Reservas.Models.Entities;
 using Reservas.Services;
 using Reservas.Services.Interfaces;
@@ -167,6 +168,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseMiddleware<ExceptionMiddleware>();
 app.UseRouting();
 app.UseRateLimiter();
 app.UseAuthentication();
