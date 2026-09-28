@@ -1,3 +1,6 @@
+# ============================================================
+# .NET Specific
+# ============================================================
 # Build output
 bin/
 obj/
@@ -10,7 +13,127 @@ appsettings.*.local.json
 # User-specific files
 *.user
 *.suo
-.vs/
+_vs/
 
-# OS files
+# The *.cache file indicates a .NET Build Cache. It's safe to ignore
+# for most clients, but if you have users who don't want an unused cache
+# directory at the root, you can add the following:
+# *.cache
+
+# Ignore installed NuGet packages
+packages/
+
+# NuGet's global packages folder
+# NuGet.GlobalPackagesFolder/
+
+# Windows Desktop
+# Uncomment if you are developing on Windows or users might have
+# installed Windows-specific tooling: dotnetlist, dotnet-preset
+*.user
+*.suo
+*.useross
+*.sln.docstates
+*.sln.targets
+*.sln.items
+
+# SQL Server local database connection string paths
+App_Data/
+
+# Visual Studio Note: If you have comments like these they will not
+# be ignored on Linux or Mac, to ignore these on all platforms move
+# them to a .gitignore file in the root of your repo.
+# !! This pattern will be unrecognized on Mac OS X if you use case-sensitive
+# filing systems. On Mac OS X case-sensitivity is determined at install time
+# by the OS. However, Linux does not have this issue.
+
+# .NET Core
+# Visual Studio Code
+.vscode/*
+!.vscode/extensions.json
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Rider
+*.Rider*
+
+# ============================================================
+# Environment & Secrets (CRITICAL - never commit)
+# ============================================================
+# Environment variables - never commit these
+.env
+.env.*
+!.env.example
+
+# JWT secrets, connection strings, API keys, etc.
+# These are typically in appsettings.json or env files - they should
+# never be in version control
+# (Already covered by appsettings patterns above, but good to remember)
+
+# ============================================================
+# Node / Frontend
+# ============================================================
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Runtime stuff
+node_modules
+dist
+dist-ssr
+coverage
+
+# TypeScript cache
+*.tsbuildinfo
+
+# ESLint
+.eslintcache
+
+# Vitest
+__screenshots__/
+
+# Cypress
+/cypress/videos/
+/cypress/screenshots/
+
+# Vite
+*.timestamp-*-*.mjs
+
+# Editor directories and files
+.vscode/*
+!vscode/extensions.json
+!.git
+/.idea
+
+# ============================================================
+# OS Specific
+# ============================================================
+# macOS
 .DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+AsyncThumbs.db
+Icon
+*.desktop
+*.url
+
+# Docker
+docker-compose.yaml
+# Docker secrets should be in .env file or docker secrets, not committed
+# But docker-compose.yaml itself might have volumes/config - review as needed
+
+# ============================================================
+# Project specific
+# ============================================================
+# Reservas http files (local test client)
+Reservas.http
+
+# Docker volumes and data
+volumes/

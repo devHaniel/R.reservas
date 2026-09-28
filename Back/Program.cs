@@ -117,6 +117,12 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
+
+using (var scope = app.Services.CreateScope())
+{
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<int>>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<Usuario>>();
     foreach (var roleName in new[] { "Admin", "Vendedor" })
@@ -183,7 +189,7 @@ if (app.Environment.IsDevelopment())
     app.MapSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseRouting();
