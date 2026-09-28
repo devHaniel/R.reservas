@@ -1,0 +1,49 @@
+services:
+
+  frontend:
+    build:
+      context: ./Front
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    depends_on:
+      - api
+
+  api:
+    build:
+      context: ./Back
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      # ASPNETCORE_ENVIRONMENT: Development
+
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      Jwt__Key: "${JWT_KEY}"
+      Jwt__Issuer: "ReservasApi"
+      Jwt__Audience: "ReservasClient"
+      Jwt__AccessTokenMinutes: "15"
+      Jwt__RefreshTokenDays: "7"
+      Cors__AllowedOrigins__0: "http://localhost"
+      Cors__AllowedOrigins__1: "http://localhost:5173"
+      Cors__AllowedOrigins__2: "http://localhost:3000"
+
+      BootstrapAdmin__Email: "${BOOTSTRAP_ADMIN_EMAIL}"
+      BootstrapAdmin__Password: "${BOOTSTRAP_ADMIN_PASSWORD}"
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

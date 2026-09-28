@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Haniel Hernández. All rights reserved under the MIT license.
+
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;

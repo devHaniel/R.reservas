@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Haniel Hernández. All rights reserved under the MIT license.
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Authorization;

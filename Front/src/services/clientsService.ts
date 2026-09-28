@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Haniel Hernández. All rights reserved under the MIT license.
+
 import { apiRequest } from './apiClient'
 import type { Client, ClientWrite, PagedResult } from '../types/api'
 

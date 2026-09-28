@@ -124,10 +124,6 @@ Icon
 *.desktop
 *.url
 
-# Docker
-docker-compose.yaml
-# Docker secrets should be in .env file or docker secrets, not committed
-# But docker-compose.yaml itself might have volumes/config - review as needed
 
 # ============================================================
 # Project specific

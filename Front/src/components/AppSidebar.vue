@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Haniel Hernández. All rights reserved under the MIT license.
+
 <script setup lang="ts">
 import type { ApiRole, AppSection } from '../types/api'
 

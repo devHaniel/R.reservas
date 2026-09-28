@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Haniel Hernández. All rights reserved under the MIT license.
+
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'

@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Haniel Hernández. All rights reserved under the MIT license.
+
 using System.ComponentModel.DataAnnotations;
 
 namespace Reservas.Models.Entities;

@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Haniel Hernández. All rights reserved under the MIT license.
+
 import { createRouter, createWebHistory } from 'vue-router'
 import ApiWorkspace from '../views/ApiWorkspace.vue'
 import LoginView from '../views/LoginView.vue'

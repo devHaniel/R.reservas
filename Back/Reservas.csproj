@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>0d6ce501-ac43-4b3e-9d81-1fd15e75b160</UserSecretsId>
+    <AssemblyCopyright>Copyright (c) 2026 Haniel Hernández</AssemblyCopyright>
   </PropertyGroup>
 
   <ItemGroup>

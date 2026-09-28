@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Haniel Hernández. All rights reserved under the MIT license.
+
 import type { AuthTokens, AuthUser } from '../types/api'
 
 const tokenStorageKey = 'reservas.auth.tokens.v1'

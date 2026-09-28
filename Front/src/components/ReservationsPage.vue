@@ -1,4 +1,6 @@
-  <script setup lang="ts">
+  // Copyright (c) 2026 Haniel Hernández. All rights reserved under the MIT license.
+
+<script setup lang="ts">
   import { computed, ref, watch } from 'vue'
   import ReservationEditorModal from './ReservationEditorModal.vue'
   import { useAuthStore } from '../stores/auth'

@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Haniel Hernández. All rights reserved under the MIT license.
+
 // Utilidades de fecha/hora para la API de reservas.
 //
 // La API trabaja con hora local del negocio como un string "de reloj":

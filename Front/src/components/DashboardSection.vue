@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Haniel Hernández. All rights reserved under the MIT license.
+
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Client, ReservableResource, Reservation, ReservationStatus } from '../types/api'

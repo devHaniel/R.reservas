@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Haniel Hernández. All rights reserved under the MIT license.
+
 import './assets/main.css'
 
 import { createApp } from 'vue'

@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Haniel Hernández. All rights reserved under the MIT license.
+
 import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr'
 import { API_BASE_URL } from './apiClient'
 

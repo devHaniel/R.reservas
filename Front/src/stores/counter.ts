@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Haniel Hernández. All rights reserved under the MIT license.
+
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 

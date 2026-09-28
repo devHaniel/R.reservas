@@ -1,6 +1,8 @@
 using System;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+// Copyright (c) 2026 Haniel Hernández. All rights reserved under the MIT license.
+
 using Microsoft.EntityFrameworkCore;
 using Reservas.Models.Entities;
 
