@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Haniel Hernández. All rights reserved under the MIT license.
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
 import { useAuthStore } from '../stores/auth'
 import { useUsersStore } from '../stores/users'
@@ -10,14 +10,10 @@ import type { AuthUser } from '../types/api'
 
 const store = useUsersStore()
 const auth = useAuthStore()
-
 const query = ref('')
-
 const modalOpen = ref(false)
 const editingId = ref<number | null>(null)
-
 const formError = ref('')
-
 const form = ref<{
   nombre: string
   email: string
@@ -32,15 +28,21 @@ const form = ref<{
 
 const filteredUsers = computed(() =>
   store.users.filter((user) =>
-    [
-      user.name,
-      user.email,
-      ...user.roles,
-    ].some((value) =>
+    [user.name, user.email, ...user.roles].some((value) =>
       value.toLocaleLowerCase('es').includes(query.value.trim().toLocaleLowerCase('es')),
     ),
   ),
 )
+
+onMounted(() => {
+  void store.load().catch(() => undefined)
+})
+
+function roleLabel(roles: string[]) {
+  if (roles.includes('Admin')) return 'Administrador'
+  if (roles.includes('Vendedor')) return 'Vendedor'
+  return 'Sin rol'
+}
 
 function openCreate() {
   editingId.value = null
@@ -63,7 +65,7 @@ function openEdit(user: AuthUser) {
     nombre: user.name,
     email: user.email,
     password: '',
-    rol: 'Vendedor',
+    rol: user.roles.includes('Admin') ? 'Admin' : 'Vendedor',
   }
 
   formError.value = ''
@@ -96,7 +98,12 @@ async function submit() {
 }
 
 async function remove(user: AuthUser) {
-  if (!auth.isAdmin || !window.confirm(`¿Eliminar a ${user.name}?`)) return
+  if (!auth.isAdmin) return
+  if (user.id === auth.user?.id) {
+    formError.value = 'No puedes eliminar tu propia cuenta.'
+    return
+  }
+  if (!window.confirm(`¿Eliminar a ${user.name}? Esta acción no se puede deshacer.`)) return
 
   try {
     await store.remove(Number(user.id))
@@ -175,14 +182,18 @@ async function remove(user: AuthUser) {
             </td>
 
             <td>
-              {{ user.roles }}
+              {{ roleLabel(user.roles) }}
             </td>
 
             <td>
               <div class="row-actions">
                 <button v-if="auth.isAdmin" class="row-edit" @click="openEdit(user)">Editar</button>
 
-                <button v-if="auth.isAdmin" class="row-cancel" @click="remove(user)">
+                <button
+                  v-if="auth.isAdmin && user.id !== auth.user?.id"
+                  class="row-cancel"
+                  @click="remove(user)"
+                >
                   Eliminar
                 </button>
               </div>
@@ -242,7 +253,15 @@ async function remove(user: AuthUser) {
         <label v-if="editingId === null" class="field">
           <span> Contraseña <b>*</b> </span>
 
-          <input v-model="form.password" type="password" required minlength="6" maxlength="100" />
+          <input
+            v-model="form.password"
+            type="password"
+            required
+            minlength="8"
+            maxlength="100"
+            autocomplete="new-password"
+          />
+          <small class="form-hint">Mínimo 8 caracteres, con mayúscula, minúscula y número.</small>
         </label>
 
         <label class="field">
@@ -251,7 +270,7 @@ async function remove(user: AuthUser) {
           <select v-model="form.rol" required>
             <option value="Vendedor">Vendedor</option>
 
-            <option value="Admin">Admin</option>
+            <option value="Admin">Administrador</option>
           </select>
         </label>
 

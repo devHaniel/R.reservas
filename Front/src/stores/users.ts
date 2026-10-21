@@ -30,10 +30,10 @@ export const useUsersStore = defineStore('users', () => {
     loading.value = true
     error.value = ''
     try {
-      const result = await apiRequest<AuthUser>('/api/auth/register', {
+      const result = await apiRequest<AuthUser>('/api/usuarios', {
         method: 'POST',
         body: input,
-        auth: false,
+        auth: true,
       })
       users.value.push(result)
       return result
