@@ -18,11 +18,11 @@ export const useClientsStore = defineStore('clients', () => {
   const loading = ref(false)
   const error = ref('')
 
-  async function load(pagina = page.value.pagina, cantidad = page.value.cantidad) {
+  async function load(pagina = page.value.pagina, cantidad = page.value.cantidad, buscar = '') {
     loading.value = true
     error.value = ''
     try {
-      page.value = await clientsService.list(pagina, cantidad)
+      page.value = await clientsService.list(pagina, cantidad, buscar)
       return page.value
     } catch (cause) {
       error.value = cause instanceof Error ? cause.message : 'No se pudieron cargar los clientes.'
@@ -48,9 +48,7 @@ export const useClientsStore = defineStore('clients', () => {
   async function create(client: ClientWrite) {
     try {
       error.value = ''
-      const created = await clientsService.create(client)
-      await load(1, page.value.cantidad)
-      return created
+      return await clientsService.create(client)
     } catch (cause) {
       error.value = cause instanceof Error ? cause.message : 'No se pudo guardar el cliente.'
       throw cause
@@ -60,9 +58,7 @@ export const useClientsStore = defineStore('clients', () => {
   async function update(id: number, client: ClientWrite) {
     try {
       error.value = ''
-      const updated = await clientsService.update(id, client)
-      await load()
-      return updated
+      return await clientsService.update(id, client)
     } catch (cause) {
       error.value = cause instanceof Error ? cause.message : 'No se pudo actualizar el cliente.'
       throw cause
@@ -73,7 +69,6 @@ export const useClientsStore = defineStore('clients', () => {
     try {
       error.value = ''
       await clientsService.remove(id)
-      await load()
     } catch (cause) {
       error.value = cause instanceof Error ? cause.message : 'No se pudo eliminar el cliente.'
       throw cause

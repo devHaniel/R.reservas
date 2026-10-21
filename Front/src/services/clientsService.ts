@@ -4,8 +4,9 @@ import { apiRequest } from './apiClient'
 import type { Client, ClientWrite, PagedResult } from '../types/api'
 
 export const clientsService = {
-  list(pagina = 1, cantidad = 10) {
+  list(pagina = 1, cantidad = 10, buscar = '') {
     const query = new URLSearchParams({ pagina: String(pagina), cantidad: String(cantidad) })
+    if (buscar.trim()) query.set('buscar', buscar.trim())
     return apiRequest<PagedResult<Client>>(`/api/clientes?${query}`)
   },
   get(id: number) {
@@ -15,28 +16,15 @@ export const clientsService = {
     const query = new URLSearchParams({ email })
     return apiRequest<Client | null>(`/api/clientes/buscar?${query}`)
   },
+  /**
+   * Búsqueda global en el servidor (nombre, email o teléfono). No descarga
+   * el directorio completo ni se limita a la página visible.
+   */
   async search(term: string) {
-    const value = term.trim().toLocaleLowerCase('es')
+    const value = term.trim()
     if (!value) return []
-
-    if (value.includes('@')) {
-      const exact = await this.searchByEmail(term.trim())
-      if (exact) return [exact]
-    }
-
-    const firstPage = await this.list(1, 100)
-    const otherPages = await Promise.all(
-      Array.from({ length: Math.max(0, firstPage.totalPaginas - 1) }, (_, index) =>
-        this.list(index + 2, 100),
-      ),
-    )
-    return [firstPage, ...otherPages]
-      .flatMap((page) => page.items)
-      .filter((client) =>
-        [client.nombre, client.email, client.telefono].some((field) =>
-          field.toLocaleLowerCase('es').includes(value),
-        ),
-      )
+    const page = await this.list(1, 50, value)
+    return page.items
   },
   create(client: ClientWrite) {
     return apiRequest<Client>('/api/clientes', { method: 'POST', body: client })
