@@ -1,16 +1,23 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using Reservas.Common;
 using Reservas.Data;
 using Reservas.Hubs;
 using Reservas.Middleware;
 using Reservas.Models.Entities;
+using Reservas.Options;
 using Reservas.Services;
+using Reservas.Services.Email;
 using Reservas.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
+
+// Carga el .env local (raíz del repo o carpeta superior) antes de construir la
+// configuración. En Docker las variables del contenedor tienen prioridad.
+EnvFile.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -48,6 +55,46 @@ if (Encoding.UTF8.GetByteCount(jwtKey) < 32)
 
 if (accessTokenMinutes <= 0)
     throw new InvalidOperationException("Jwt:AccessTokenMinutes debe ser mayor que cero");
+
+var smtpOptions = builder.Configuration
+    .GetSection(SmtpOptions.SectionName)
+    .Get<SmtpOptions>() ?? new SmtpOptions();
+
+// Nombres simples para .env. Las claves estándar Smtp__* siguen funcionando.
+if (string.IsNullOrWhiteSpace(smtpOptions.User))
+    smtpOptions.User = builder.Configuration["SMTP_USER"];
+if (string.IsNullOrWhiteSpace(smtpOptions.Password))
+    smtpOptions.Password = builder.Configuration["SMTP_PASSWORD"];
+
+var smtpHost = builder.Configuration["SMTP_HOST"];
+if (!string.IsNullOrWhiteSpace(smtpHost))
+    smtpOptions.Host = smtpHost;
+
+if (int.TryParse(builder.Configuration["SMTP_PORT"], out var smtpPort) && smtpPort > 0)
+    smtpOptions.Port = smtpPort;
+
+var smtpFrom = builder.Configuration["SMTP_FROM"];
+if (!string.IsNullOrWhiteSpace(smtpFrom))
+    smtpOptions.From = smtpFrom;
+
+var smtpFromName = builder.Configuration["SMTP_FROM_NAME"];
+if (!string.IsNullOrWhiteSpace(smtpFromName))
+    smtpOptions.FromName = smtpFromName;
+
+if (bool.TryParse(builder.Configuration["SMTP_ENABLE_SSL"], out var smtpEnableSsl))
+    smtpOptions.EnableSsl = smtpEnableSsl;
+
+var publicBookingOptions = builder.Configuration
+    .GetSection(PublicBookingOptions.SectionName)
+    .Get<PublicBookingOptions>() ?? new PublicBookingOptions();
+
+// El pepper firma los códigos/tokens antes de persistirlos. Si no se configura
+// uno propio, se deriva de la clave JWT (que ya es un secreto obligatorio).
+if (string.IsNullOrWhiteSpace(publicBookingOptions.Pepper))
+    publicBookingOptions.Pepper = jwtKey;
+
+builder.Services.AddSingleton(smtpOptions);
+builder.Services.AddSingleton(publicBookingOptions);
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 if (allowedOrigins.Length == 0)
@@ -90,6 +137,15 @@ builder.Services.AddScoped<IReservaService, ReservaService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IRealtimeNotificacionService, RealtimeNotificacionService>();
+builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+builder.Services.AddScoped<IPublicBookingService, PublicBookingService>();
+
+// La cola desacopla el envío de correos de la petición de reserva. El worker
+// de recordatorios consulta las reservas próximas y reutiliza IEmailService.
+builder.Services.AddSingleton<EmailQueue>();
+builder.Services.AddSingleton<IEmailQueue>(sp => sp.GetRequiredService<EmailQueue>());
+builder.Services.AddHostedService<EmailWorker>();
+builder.Services.AddHostedService<RecordatorioReservasWorker>();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -106,6 +162,19 @@ builder.Services.AddRateLimiter(options =>
         {
             PermitLimit = 10,
             Window = TimeSpan.FromSeconds(10),
+            QueueLimit = 0,
+            AutoReplenishment = true
+        });
+    });
+
+    options.AddPolicy("public-policy", context =>
+    {
+        var ipAddress = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+        return RateLimitPartition.GetFixedWindowLimiter(ipAddress, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 30,
+            Window = TimeSpan.FromMinutes(1),
             QueueLimit = 0,
             AutoReplenishment = true
         });

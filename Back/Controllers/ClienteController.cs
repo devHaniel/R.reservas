@@ -24,12 +24,13 @@ public class ClienteController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<PagedResult<ClienteDto>>> GetAll(
         [FromQuery] int pagina = 1,
-        [FromQuery] int cantidad = 10)
+        [FromQuery] int cantidad = 10,
+        [FromQuery] string? buscar = null)
     {
         if (pagina < 1 || cantidad < 1 || cantidad > 100)
             return BadRequest("La página debe ser mayor que 0 y la cantidad debe estar entre 1 y 100.");
 
-        return Ok(await _service.GetAllAsync(pagina, cantidad));
+        return Ok(await _service.GetAllAsync(pagina, cantidad, buscar));
     }
 
     [HttpGet("{id:int}")]

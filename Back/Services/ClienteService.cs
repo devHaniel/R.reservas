@@ -20,16 +20,31 @@ public class ClienteService : IClienteService
         _context = context;
     }
 
-    public async Task<PagedResult<ClienteDto>> GetAllAsync(int pagina = 1, int cantidad = 10)
+    public async Task<PagedResult<ClienteDto>> GetAllAsync(
+        int pagina = 1,
+        int cantidad = 10,
+        string? buscar = null)
     {
         var query = _context.Clientes
             .AsNoTracking()
             .Where(c => c.EliminadoEn == null);
 
+        var termino = buscar?.Trim();
+        if (!string.IsNullOrEmpty(termino))
+        {
+            // Búsqueda global (no solo la página visible): nombre, email o teléfono.
+            var patron = $"%{termino}%";
+            query = query.Where(c =>
+                EF.Functions.ILike(c.Nombre, patron) ||
+                (c.Email != null && EF.Functions.ILike(c.Email, patron)) ||
+                EF.Functions.ILike(c.Telefono, patron));
+        }
+
         var total = await query.CountAsync();
 
         var clientes = await query
-            .OrderBy(c => c.Id)
+            .OrderBy(c => c.Nombre)
+            .ThenBy(c => c.Id)
             .Skip((pagina - 1) * cantidad)
             .Take(cantidad)
             .ToListAsync();
@@ -68,9 +83,9 @@ public class ClienteService : IClienteService
         var cliente = new Cliente
         {
             UsuarioId = usuarioId,
-            Nombre = dto.Nombre,
-            Telefono = dto.Telefono,
-            Email = dto.Email
+            Nombre = dto.Nombre.Trim(),
+            Telefono = dto.Telefono.Trim(),
+            Email = NormalizarEmail(dto.Email)
         };
 
         _context.Clientes.Add(cliente);
@@ -85,9 +100,9 @@ public class ClienteService : IClienteService
             .FirstOrDefaultAsync(c => c.Id == dto.Id && c.EliminadoEn == null)
             ?? throw new KeyNotFoundException("Cliente no encontrado");
 
-        cliente.Nombre = dto.Nombre;
-        cliente.Telefono = dto.Telefono;
-        cliente.Email = dto.Email;
+        cliente.Nombre = dto.Nombre.Trim();
+        cliente.Telefono = dto.Telefono.Trim();
+        cliente.Email = NormalizarEmail(dto.Email);
 
         await _context.SaveChangesAsync();
 
@@ -108,6 +123,9 @@ public class ClienteService : IClienteService
 
         return true;
     }
+
+    private static string? NormalizarEmail(string? email)
+        => string.IsNullOrWhiteSpace(email) ? null : email.Trim();
 
     private static ClienteDto Map(Cliente c) => new()
     {

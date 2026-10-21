@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Reservas.Common.DTOs.Reserva;
+using Reservas.Common.Email;
 using Reservas.Common.Fechas;
 using Reservas.Data;
 using Reservas.Models.Entities;
@@ -12,11 +13,16 @@ public class ReservaService : IReservaService
 {
     private readonly AppDbContext _context;
     private readonly IRealtimeNotificacionService _notificaciones;
+    private readonly IEmailQueue _emails;
 
-    public ReservaService(AppDbContext context, IRealtimeNotificacionService notificaciones)
+    public ReservaService(
+        AppDbContext context,
+        IRealtimeNotificacionService notificaciones,
+        IEmailQueue emails)
     {
         _context = context;
         _notificaciones = notificaciones;
+        _emails = emails;
     }
 
     public async Task<List<ReservaDto>> GetAllAsync()
@@ -125,6 +131,7 @@ public class ReservaService : IReservaService
         await GuardarReservaAsync();
 
         await _notificaciones.NotificarAsync("ReservaActualizado");
+        EncolarConfirmacion(cliente.Email, reserva, cliente.Nombre, recurso.Nombre);
 
         return Map(reserva, cliente.Nombre, recurso.Nombre);
     }
@@ -136,17 +143,46 @@ public class ReservaService : IReservaService
             ?? throw new KeyNotFoundException("Reserva no encontrada");
 
         var cliente = await _context.Clientes
-            .FirstOrDefaultAsync(c => c.Id == dto.ClienteId && c.EliminadoEn == null)
+            .FirstOrDefaultAsync(c => c.Id == dto.ClienteId)
             ?? throw new KeyNotFoundException("Cliente no encontrado");
 
-        var tipoServicio = await CargarServicioValidoAsync(dto.TipoServicioId);
+        // Un cliente archivado no puede usarse en reservas nuevas ni asignarse a
+        // otra reserva, pero la reserva histórica que ya lo tenía debe poder editarse.
+        if (cliente.EliminadoEn != null && dto.ClienteId != reserva.ClienteId)
+            throw new ArgumentException("El cliente no está disponible.");
+
+        var tipoServicio = await CargarServicioAsync(dto.TipoServicioId);
+        var mismoServicio = dto.TipoServicioId == reserva.TipoServicioId;
+        var servicioVigente =
+            tipoServicio.EliminadoEn is null &&
+            tipoServicio.Activo &&
+            tipoServicio.RecursoReservable.EliminadoEn is null &&
+            tipoServicio.RecursoReservable.Activo;
+
+        // Una reserva histórica puede conservar su opción aunque esta se haya
+        // archivado; lo que no se permite es mover la reserva a una opción inactiva.
+        if (!servicioVigente && !mismoServicio)
+            throw new ArgumentException("El tipo de servicio no está disponible.");
 
         var recurso = tipoServicio.RecursoReservable;
+        var duracion = servicioVigente || !mismoServicio
+            ? tipoServicio.DuracionMinutos
+            : reserva.DuracionMinutos;
         var inicio = FechaHoraApi.Parse(dto.FechaHoraInicio, nameof(dto.FechaHoraInicio));
-        var fin = inicio.AddMinutes(tipoServicio.DuracionMinutos);
+        var fin = inicio.AddMinutes(duracion);
 
-        ValidarHorario(recurso, inicio, fin);
-        await AsegurarSinConflictoAsync(recurso.Id, inicio, fin, reserva.Id);
+        if (dto.Estado != EstadoReserva.Cancelada)
+        {
+            if (recurso.EliminadoEn is null && recurso.Activo)
+                ValidarHorario(recurso, inicio, fin);
+
+            await AsegurarSinConflictoAsync(recurso.Id, inicio, fin, reserva.Id);
+        }
+
+        var estadoAnterior = reserva.Estado;
+        var horarioCambio =
+            reserva.FechaHoraInicio != inicio ||
+            reserva.FechaHoraFin != fin;
 
         reserva.ClienteId = cliente.Id;
         reserva.TipoServicioId = tipoServicio.Id;
@@ -156,21 +192,37 @@ public class ReservaService : IReservaService
         reserva.Estado = dto.Estado;
         reserva.Nota = dto.Nota;
 
+        // Si la reserva se movió de horario, el recordatorio anterior ya no aplica.
+        if (horarioCambio)
+            reserva.RecordatorioEnviadoEn = null;
+
         // Nuevo snapshot: el servicio puede haber cambiado de precio/duración.
-        reserva.Precio = tipoServicio.Precio;
-        reserva.DuracionMinutos = tipoServicio.DuracionMinutos;
-        reserva.NombreServicio = tipoServicio.Nombre;
+        reserva.Precio = servicioVigente || !mismoServicio ? tipoServicio.Precio : reserva.Precio;
+        reserva.DuracionMinutos = duracion;
+        reserva.NombreServicio = servicioVigente || !mismoServicio
+            ? tipoServicio.Nombre
+            : reserva.NombreServicio;
 
         await GuardarReservaAsync();
 
         await _notificaciones.NotificarAsync("ReservaActualizado");
+
+        if (estadoAnterior != EstadoReserva.Confirmada &&
+            reserva.Estado == EstadoReserva.Confirmada)
+        {
+            EncolarConfirmacion(cliente.Email, reserva, cliente.Nombre, recurso.Nombre);
+        }
 
         return Map(reserva, cliente.Nombre, recurso.Nombre);
     }
 
     public async Task<ReservaDto?> CambiarEstadoAsync(int id, EstadoReserva estado)
     {
-        var reserva = await BaseQuery().FirstOrDefaultAsync(r => r.Id == id);
+        // Se carga con tracking: este método modifica y guarda el estado.
+        var reserva = await _context.Reservas
+            .Include(r => r.Cliente)
+            .Include(r => r.RecursoReservable)
+            .FirstOrDefaultAsync(r => r.Id == id);
         if (reserva is null)
             return null;
 
@@ -182,10 +234,21 @@ public class ReservaService : IReservaService
                 reserva.FechaHoraFin,
                 reserva.Id);
 
+        var estadoAnterior = reserva.Estado;
         reserva.Estado = estado;
         await GuardarReservaAsync();
 
         await _notificaciones.NotificarAsync("ReservaActualizado");
+
+        if (estadoAnterior != EstadoReserva.Confirmada &&
+            reserva.Estado == EstadoReserva.Confirmada)
+        {
+            EncolarConfirmacion(
+                reserva.Cliente.Email,
+                reserva,
+                reserva.Cliente.Nombre,
+                reserva.RecursoReservable.Nombre);
+        }
 
         return Map(reserva);
     }
@@ -208,19 +271,47 @@ public class ReservaService : IReservaService
 
     // --- Helpers ---
 
+    private void EncolarConfirmacion(
+        string? email,
+        Reserva reserva,
+        string nombreCliente,
+        string nombreRecurso)
+    {
+        if (string.IsNullOrWhiteSpace(email) ||
+            reserva.Estado is EstadoReserva.Cancelada or EstadoReserva.Completada)
+            return;
+
+        _emails.EncolarConfirmacion(
+            email.Trim(),
+            new ReservaEmailInfo(
+                $"R-{reserva.Id:D6}",
+                nombreCliente,
+                nombreRecurso,
+                reserva.NombreServicio,
+                FechaHoraApi.Formatear(reserva.FechaHoraInicio),
+                FechaHoraApi.Formatear(reserva.FechaHoraFin),
+                reserva.Precio,
+                reserva.Estado));
+    }
+
     private IQueryable<Reserva> BaseQuery()
         => _context.Reservas
             .Include(r => r.Cliente)
             .Include(r => r.RecursoReservable)
             .AsNoTracking();
 
-    private async Task<TipoServicio> CargarServicioValidoAsync(int tipoServicioId)
+    private async Task<TipoServicio> CargarServicioAsync(int tipoServicioId)
     {
-        var tipoServicio = await _context.TiposServicio
+        return await _context.TiposServicio
             .Include(t => t.RecursoReservable)
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Id == tipoServicioId)
             ?? throw new KeyNotFoundException("Tipo de servicio no encontrado");
+    }
+
+    private async Task<TipoServicio> CargarServicioValidoAsync(int tipoServicioId)
+    {
+        var tipoServicio = await CargarServicioAsync(tipoServicioId);
 
         if (tipoServicio.EliminadoEn != null || !tipoServicio.Activo)
             throw new ArgumentException("El tipo de servicio no está disponible.");

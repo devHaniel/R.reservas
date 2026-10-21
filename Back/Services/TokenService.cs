@@ -23,7 +23,7 @@ public class TokenService : ITokenService
         _context = context;
     }
 
-    public string GenerarToken(int idUsuario, IEnumerable<string> roles)
+    public string GenerarToken(Usuario usuario, IEnumerable<string> roles)
     {
         var key = _configuration["Jwt:Key"]
             ?? throw new InvalidOperationException("JWT Key no configurada");
@@ -36,7 +36,9 @@ public class TokenService : ITokenService
 
         var claims = new List<Claim>
         {
-            new(ClaimTypes.NameIdentifier, idUsuario.ToString())
+            new(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
+            new(ClaimTypes.Name, usuario.Nombre),
+            new(ClaimTypes.Email, usuario.Email ?? string.Empty)
         };
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 

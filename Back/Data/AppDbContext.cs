@@ -17,6 +17,7 @@ public class AppDbContext : IdentityDbContext<Usuario, IdentityRole<int>, int>
     public DbSet<RecursoReservable> RecursosReservables { get; set; }
     public DbSet<TipoServicio> TiposServicio { get; set; }
     public DbSet<Reserva> Reservas { get; set; }
+    public DbSet<VerificacionCorreo> VerificacionesCorreo { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

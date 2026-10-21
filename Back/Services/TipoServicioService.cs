@@ -19,7 +19,8 @@ public class TipoServicioService : ITipoServicioService
     {
         var tipos = await _context.TiposServicio
             .AsNoTracking()
-            .Where(t => t.EliminadoEn == null)
+            .Include(t => t.RecursoReservable)
+            .Where(t => t.EliminadoEn == null && t.RecursoReservable.EliminadoEn == null)
             .OrderBy(t => t.Nombre)
             .ToListAsync();
 
@@ -30,7 +31,11 @@ public class TipoServicioService : ITipoServicioService
     {
         var tipo = await _context.TiposServicio
             .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Id == id && t.EliminadoEn == null);
+            .Include(t => t.RecursoReservable)
+            .FirstOrDefaultAsync(t =>
+                t.Id == id &&
+                t.EliminadoEn == null &&
+                t.RecursoReservable.EliminadoEn == null);
 
         return tipo is null ? null : Map(tipo);
     }
@@ -39,7 +44,11 @@ public class TipoServicioService : ITipoServicioService
     {
         var tipos = await _context.TiposServicio
             .AsNoTracking()
-            .Where(t => t.EliminadoEn == null && t.RecursoReservableId == recursoReservableId)
+            .Include(t => t.RecursoReservable)
+            .Where(t =>
+                t.EliminadoEn == null &&
+                t.RecursoReservableId == recursoReservableId &&
+                t.RecursoReservable.EliminadoEn == null)
             .OrderBy(t => t.Nombre)
             .ToListAsync();
 

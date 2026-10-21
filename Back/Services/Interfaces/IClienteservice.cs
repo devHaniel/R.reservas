@@ -5,7 +5,7 @@ namespace Reservas.Services.Interfaces;
 
 public interface IClienteService
 {
-    Task<PagedResult<ClienteDto>> GetAllAsync(int pagina = 1, int cantidad = 10);
+    Task<PagedResult<ClienteDto>> GetAllAsync(int pagina = 1, int cantidad = 10, string? buscar = null);
     Task<ClienteDto?> GetByIdAsync(int id);
     Task<ClienteDto?> GetByEmailAsync(string email);
     Task<ClienteDto> CreateAsync(ClienteCrearDto dto, int usuarioId);

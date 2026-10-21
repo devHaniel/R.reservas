@@ -10,9 +10,13 @@ public class RecursoReservable
     [StringLength(100)]
     public string Nombre { get; set; } = string.Empty;              // "Cancha 1", "Cancha techada 3"
 
+    /// <summary>
+    /// Categoría libre del espacio ("Salón", "Consulta", "Cancha"). No se limita
+    /// a deportes para que el sistema sirva a cualquier tipo de negocio.
+    /// </summary>
     [Required]
     [StringLength(60)]
-    public string TipoDeporte { get; set; } = string.Empty;          // "Fútbol 5", "Pádel", "Tenis"
+    public string Categoria { get; set; } = string.Empty;
 
     /// <summary>Permite deshabilitar temporalmente el recurso sin borrarlo.</summary>
     public bool Activo { get; set; } = true;

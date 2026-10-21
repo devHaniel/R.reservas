@@ -36,6 +36,12 @@ public class Reserva
     /// <summary>Instante UTC de auditoría.</summary>
     public DateTime FechaCreacion { get; set; }
 
+    /// <summary>
+    /// Instante UTC en que se envió el recordatorio previo. Evita duplicados
+    /// cuando el worker se ejecuta varias veces.
+    /// </summary>
+    public DateTime? RecordatorioEnviadoEn { get; set; }
+
     // --- Snapshot inmutable del servicio al momento de reservar ---
 
     public decimal Precio { get; set; }

@@ -30,6 +30,9 @@ public class ReservaConfiguration : IEntityTypeConfiguration<Reserva>
         builder.Property(r => r.FechaCreacion)
             .HasColumnType("timestamp with time zone");
 
+        builder.Property(r => r.RecordatorioEnviadoEn)
+            .HasColumnType("timestamp with time zone");
+
         builder.Property(r => r.Precio)
             .HasPrecision(12, 2);
 

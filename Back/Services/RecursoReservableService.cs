@@ -27,11 +27,11 @@ public class RecursoReservableService : IRecursoReservableService
         return recurso is null ? null : Map(recurso);
     }
 
-    public async Task<List<RecursoReservableDto>> GetByTipoDeporteAsync(string tipoDeporte)
+    public async Task<List<RecursoReservableDto>> GetByCategoriaAsync(string categoria)
     {
-        var filtro = tipoDeporte.Trim().ToUpper();
+        var filtro = categoria.Trim().ToUpper();
         var recursos = await Activos()
-            .Where(r => r.TipoDeporte.ToUpper().Contains(filtro))
+            .Where(r => r.Categoria.ToUpper().Contains(filtro))
             .ToListAsync();
 
         return recursos.Select(Map).ToList();
@@ -44,7 +44,7 @@ public class RecursoReservableService : IRecursoReservableService
         var recurso = new RecursoReservable
         {
             Nombre = dto.Nombre,
-            TipoDeporte = dto.TipoDeporte,
+            Categoria = dto.Categoria,
             Activo = dto.Activo,
             HorarioAperturaDefault = dto.HorarioAperturaDefault,
             HorarioCierreDefault = dto.HorarioCierreDefault
@@ -65,7 +65,7 @@ public class RecursoReservableService : IRecursoReservableService
             ?? throw new KeyNotFoundException("Recurso reservable no encontrado");
 
         recurso.Nombre = dto.Nombre;
-        recurso.TipoDeporte = dto.TipoDeporte;
+        recurso.Categoria = dto.Categoria;
         recurso.Activo = dto.Activo;
         recurso.HorarioAperturaDefault = dto.HorarioAperturaDefault;
         recurso.HorarioCierreDefault = dto.HorarioCierreDefault;
@@ -84,9 +84,21 @@ public class RecursoReservableService : IRecursoReservableService
             return false;
 
         // Borrado lógico: conservamos reservas históricas y servicios asociados.
-        recurso.EliminadoEn = DateTime.UtcNow;
+        // Las opciones del espacio también se archivan para que dejen de ofrecerse.
+        var ahora = DateTime.UtcNow;
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+
+        recurso.EliminadoEn = ahora;
         recurso.Activo = false;
         await _context.SaveChangesAsync();
+
+        await _context.TiposServicio
+            .Where(t => t.RecursoReservableId == id && t.EliminadoEn == null)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(t => t.EliminadoEn, ahora)
+                .SetProperty(t => t.Activo, false));
+
+        await transaction.CommitAsync();
 
         return true;
     }
@@ -107,7 +119,7 @@ public class RecursoReservableService : IRecursoReservableService
     {
         Id = r.Id,
         Nombre = r.Nombre,
-        TipoDeporte = r.TipoDeporte,
+        Categoria = r.Categoria,
         Activo = r.Activo,
         HorarioAperturaDefault = r.HorarioAperturaDefault,
         HorarioCierreDefault = r.HorarioCierreDefault

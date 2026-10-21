@@ -55,7 +55,7 @@ public class AuthService : IAuthService
             return null;
 
         var roles = await _userManager.GetRolesAsync(usuario);
-        var accessToken = _tokenService.GenerarToken(usuario.Id, roles);
+        var accessToken = _tokenService.GenerarToken(usuario, roles);
         var refreshToken = _tokenService.GenerarRefreshToken();
         var historial = await _tokenService.GuardarHistorialRefreshToken(
             usuario.Id,
@@ -88,7 +88,7 @@ public class AuthService : IAuthService
             return null;
 
         var roles = await _userManager.GetRolesAsync(usuario);
-        var accessToken = _tokenService.GenerarToken(usuario.Id, roles);
+        var accessToken = _tokenService.GenerarToken(usuario, roles);
         var refreshToken = _tokenService.GenerarRefreshToken();
         await using var transaction = await _context.Database.BeginTransactionAsync();
 

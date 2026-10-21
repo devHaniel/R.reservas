@@ -41,21 +41,23 @@ Cuenta de staff (Identity). Roles: `Admin`, `Vendedor`. **No hay rol Cliente.**
 
 ### Cliente
 Contacto para reservar. **Global** (una sola sede): no se filtra por usuario.
-`UsuarioId` guarda quién lo registró, solo informativo.
+`UsuarioId` guarda quién lo registró, solo informativo; es `null` cuando el
+cliente se creó desde la landing pública.
 
 - Borrado **lógico** (`EliminadoEn`).
 - `Email` y `Telefono` únicos **entre activos** (índices parciales), así se puede
   re-registrar un cliente dado de baja.
 
 ### RecursoReservable
-La cancha/sala.
+El espacio que se reserva (cancha, sala, consultorio, mesa…).
 
+- `Categoria`: texto libre ("Salón", "Deporte", "Consulta") para agrupar espacios.
 - `HorarioAperturaDefault` / `HorarioCierreDefault`: `interval` (`"08:00"`, `"22:00"`).
 - `Activo` para deshabilitar sin borrar.
-- Borrado **lógico** (`EliminadoEn`).
+- Borrado **lógico** (`EliminadoEn`); al archivar el espacio también se archivan sus opciones.
 
 ### TipoServicio
-Modalidad sobre un recurso (ej. "Turno 1 hora").
+Opción de reserva sobre un espacio (ej. "Turno 1 hora", "Sesión completa").
 
 - `DuracionMinutos` (1–1440) y `Precio`.
 - `Activo` + borrado **lógico**.
@@ -66,12 +68,25 @@ Hecho inmutable. **Nunca cambia su `FechaHoraFin` por cambios de catálogo.**
 
 - `FechaHoraInicio` / `FechaHoraFin`: `timestamp without time zone` (hora local).
 - `FechaCreacion`: `timestamp with time zone` (UTC de auditoría).
+- `RecordatorioEnviadoEn`: `timestamp with time zone`, UTC del recordatorio enviado
+  (evita duplicados; `null` mientras no se haya enviado).
 - Snapshot: `Precio`, `DuracionMinutos`, `NombreServicio`, `RecursoReservableId`.
 - `Estado`: 0 Pendiente, 1 Confirmada, 2 Cancelada, 3 Completada.
 - FK a `Cliente`, `TipoServicio`, `RecursoReservable` con `ON DELETE RESTRICT`.
 
 ### HistorialRefreshToken
 Rotación de refresh tokens. Se guarda el **hash SHA-256**, no el token en claro.
+
+### VerificacionCorreo
+Soporte del flujo público de reservas sin cuentas de cliente.
+
+- `Email` normalizado a minúsculas.
+- `CodigoHash`: HMAC-SHA256 del código de 6 dígitos; nunca se guarda el código.
+- `CodigoExpiraEn`, `CodigoUsadoEn` e `Intentos` limitan la vigencia y la fuerza bruta.
+- `TokenHash`: token de un solo uso que autoriza crear **una** reserva.
+- `TokenExpiraEn`, `TokenUsadoEn`: vigencia y consumo del token.
+- No tiene relación directa con `Cliente`: la verificación prueba el correo y la
+  reserva crea o actualiza el cliente en el directorio.
 
 ## ¿Por qué hora local sin zona?
 
@@ -97,7 +112,8 @@ recurso, aunque dos peticiones concurrentes pasen la validación del servicio.
 | Entidad | Borrado | Motivo |
 |---|---|---|
 | Cliente | Lógico | Conservar historial de reservas |
-| RecursoReservable | Lógico | Conservar historial y servicios |
+| Verificación de correo | Expira por tiempo | Datos temporales de seguridad |
+| RecursoReservable | Lógico | Conservar historial y opciones |
 | TipoServicio | Lógico | Conservar precio/duración históricos |
 | Reserva | Físico (solo Admin, emergencia) | El flujo normal es cancelar (estado 2) |
 

@@ -6,7 +6,7 @@ public interface IRecursoReservableService
 {
     Task<List<RecursoReservableDto>> GetAllAsync();
     Task<RecursoReservableDto?> GetByIdAsync(int id);
-    Task<List<RecursoReservableDto>> GetByTipoDeporteAsync(string tipoDeporte);
+    Task<List<RecursoReservableDto>> GetByCategoriaAsync(string categoria);
     Task<RecursoReservableDto> CreateAsync(RecursoReservableCrearDto dto);
     Task<RecursoReservableDto> UpdateAsync(RecursoReservableActualizarDto dto);
     Task<bool> DeleteAsync(int id);

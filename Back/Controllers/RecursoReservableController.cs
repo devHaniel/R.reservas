@@ -31,9 +31,12 @@ public class RecursoReservableController : ControllerBase
     }
 
     [HttpGet("buscar")]
-    public async Task<ActionResult<List<RecursoReservableDto>>> GetByTipoDeporte([FromQuery] string tipoDeporte)
+    public async Task<ActionResult<List<RecursoReservableDto>>> GetByCategoria([FromQuery] string categoria)
     {
-        return Ok(await _service.GetByTipoDeporteAsync(tipoDeporte));
+        if (string.IsNullOrWhiteSpace(categoria))
+            return BadRequest("Indica una categoría para buscar.");
+
+        return Ok(await _service.GetByCategoriaAsync(categoria));
     }
 
     [HttpPost]
