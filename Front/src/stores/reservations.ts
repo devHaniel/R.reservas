@@ -88,6 +88,18 @@ export const useReservationsStore = defineStore('reservations', () => {
     }
   }
 
+  async function changeStatus(id: number, estado: number) {
+    try {
+      error.value = ''
+      const updated = await reservationsService.changeStatus(id, estado)
+      items.value = items.value.map((item) => (item.id === id ? updated : item))
+      return updated
+    } catch (cause) {
+      error.value = cause instanceof Error ? cause.message : 'No se pudo cambiar el estado.'
+      throw cause
+    }
+  }
+
   return {
     items,
     loading,
@@ -100,5 +112,6 @@ export const useReservationsStore = defineStore('reservations', () => {
     create,
     update,
     remove,
+    changeStatus,
   }
 })

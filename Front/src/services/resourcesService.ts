@@ -10,8 +10,8 @@ export const resourcesService = {
   get(id: number) {
     return apiRequest<ReservableResource>(`/api/recursos-reservables/${id}`)
   },
-  searchBySport(tipoDeporte: string) {
-    const query = new URLSearchParams({ tipoDeporte })
+  searchByCategory(categoria: string) {
+    const query = new URLSearchParams({ categoria })
     return apiRequest<ReservableResource[]>(`/api/recursos-reservables/buscar?${query}`)
   },
   create(resource: ResourceWrite) {

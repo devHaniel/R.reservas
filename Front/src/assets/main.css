@@ -2405,3 +2405,91 @@ td > strong,
     min-height: 47px;
   }
 }
+
+/* --- Ajustes de la experiencia general de reservas --- */
+.catalog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.catalog-hint {
+  margin: -4px 0 16px;
+  color: #7c8b9f;
+  font-size: 10px;
+  line-height: 1.55;
+}
+.catalog-hint strong {
+  color: #3a4f68;
+  font-weight: 700;
+}
+.tab-count {
+  display: inline-grid;
+  min-width: 17px;
+  height: 17px;
+  margin-left: 4px;
+  place-items: center;
+  border-radius: 3px;
+  background: rgba(36, 76, 126, 0.08);
+  font-size: 8px;
+  font-weight: 700;
+}
+.segmented-control button.selected .tab-count {
+  background: #e7eef7;
+}
+.metric-value-money {
+  margin-top: 14px;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+.reservation-modal-wide {
+  width: min(100%, 660px);
+}
+.form-section {
+  display: grid;
+  gap: 11px;
+  padding: 14px 0;
+  border-top: 1px solid #edf0f5;
+}
+.form-section:first-of-type {
+  padding-top: 0;
+  border-top: 0;
+}
+.form-section-title {
+  margin: 0;
+  color: #65788f;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+.form-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.quick-client-form {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #e1e8f1;
+  border-radius: 5px;
+  background: #f8fafd;
+}
+.quick-client-form .button {
+  justify-self: start;
+  min-height: 34px;
+}
+@media (max-width: 780px) {
+  .catalog-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .catalog-actions {
+    width: 100%;
+  }
+  .catalog-actions .button {
+    flex: 1;
+  }
+}

@@ -25,7 +25,7 @@ export interface Client {
   id: number
   nombre: string
   telefono: string
-  email: string
+  email: string | null
 }
 
 export type ClientWrite = Omit<Client, 'id'> & { id?: number }
@@ -41,17 +41,23 @@ export interface PagedResult<T> {
 export interface Reservation {
   id: number
   clienteId: number
+  nombreCliente: string
   recursoReservableId: number
+  nombreRecurso: string
   tipoServicioId: number
+  nombreServicio: string
   fechaHoraInicio: string
   fechaHoraFin: string
   estado: ReservationStatus
+  precio: number
+  duracionMinutos: number
+  nota: string | null
   fechaCreacion: string
 }
 
 export type ReservationWrite = Pick<
   Reservation,
-  'clienteId' | 'tipoServicioId' | 'fechaHoraInicio' | 'estado'
+  'clienteId' | 'tipoServicioId' | 'fechaHoraInicio' | 'estado' | 'nota'
 > & { id?: number }
 
 export interface ReservationEditorValue {
@@ -59,12 +65,13 @@ export interface ReservationEditorValue {
   tipoServicioId: number
   fechaHoraInicioLocal: string
   estado: ReservationStatus
+  nota: string
 }
 
 export interface ReservableResource {
   id: number
   nombre: string
-  tipoDeporte: string
+  categoria: string
   activo: boolean
   horarioAperturaDefault: string
   horarioCierreDefault: string
@@ -78,6 +85,7 @@ export interface ServiceType {
   nombre: string
   duracionMinutos: number
   precio: number
+  activo: boolean
 }
 
 export type ServiceTypeWrite = Omit<ServiceType, 'id'> & { id?: number }

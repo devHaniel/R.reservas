@@ -59,13 +59,13 @@ const emit = defineEmits<{
         :class="['nav-item', { active: activeSection === 'resources' }]"
         @click="emit('navigate', 'resources')"
       >
-        <span class="nav-glyph">⌂</span>Recursos
+        <span class="nav-glyph">⌂</span>Espacios
       </button>
       <button
         :class="['nav-item', { active: activeSection === 'services' }]"
         @click="emit('navigate', 'services')"
       >
-        <span class="nav-glyph">◷</span>Servicios
+        <span class="nav-glyph">◷</span>Opciones
       </button>
       <button
         v-if="roles.includes('Admin')"
@@ -73,13 +73,6 @@ const emit = defineEmits<{
         @click="emit('navigate', 'users')"
       >
         <span class="nav-glyph">♕</span>Usuarios
-      </button>
-      <button
-        v-if="roles.includes('Admin')"
-        :class="['nav-item', { active: activeSection === 'users' }]"
-        @click="emit('navigate', 'users')"
-      >
-        <span class="nav-glyph">♙</span>Vendedores
       </button>
     </nav>
 
@@ -93,7 +86,7 @@ const emit = defineEmits<{
         <span class="avatar avatar-owner">H</span>
         <span class="profile-copy"
           ><strong>{{ userName }}</strong
-          ><span>{{ roles.includes('Admin') ? 'Administradora' : 'Vendedor' }}</span></span
+          ><span>{{ roles.includes('Admin') ? 'Administrador' : 'Vendedor' }}</span></span
         >
         <span class="profile-menu">⌄</span>
       </div>

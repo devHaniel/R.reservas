@@ -2,7 +2,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import AppSidebar from '../components/AppSidebar.vue'
 import CalendarSection from '../components/CalendarSection.vue'
 import CatalogSection from '../components/CatalogSection.vue'
@@ -10,7 +10,6 @@ import ClientsSection from '../components/ClientsSection.vue'
 import DashboardSection from '../components/DashboardSection.vue'
 import ReservationsPage from '../components/ReservationsPage.vue'
 import UsersSection from '../components/UsersSection.vue'
-import VendorsSection from '../components/VendorsSection.vue'
 import { connectReservationNotifications } from '../services/notificationService'
 import { useAuthStore } from '../stores/auth'
 import { useCatalogStore } from '../stores/catalog'
@@ -19,14 +18,12 @@ import { useReservationsStore } from '../stores/reservations'
 import type { AppSection } from '../types/api'
 import { formatearFechaLarga, fechaHoy } from '../utils/fechas'
 
+const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const reservations = useReservationsStore()
 const clients = useClientsStore()
 const catalog = useCatalogStore()
-const activeSection = ref<AppSection>('overview')
-const reservationFocusId = ref<number | null>(null)
-const reservationInitialDate = ref<string | null>(null)
 const liveConnection = ref<'connecting' | 'connected' | 'offline'>('connecting')
 const todayKey = fechaHoy()
 const todayLabel = formatearFechaLarga(todayKey, {
@@ -36,32 +33,42 @@ const todayLabel = formatearFechaLarga(todayKey, {
 })
 let stopNotifications: (() => Promise<void>) | undefined
 
+const sectionRoutes: Record<AppSection, string> = {
+  overview: 'home',
+  reservations: 'reservations',
+  calendar: 'calendar',
+  clients: 'clients',
+  resources: 'resources',
+  services: 'services',
+  users: 'users',
+}
+
+const activeSection = computed<AppSection>(
+  () => (route.meta.section as AppSection | undefined) ?? 'overview',
+)
+
 const sectionDetails: Record<AppSection, { eyebrow: string; title: string }> = {
-  overview: { eyebrow: 'Operación', title: 'Panel de control.' },
+  overview: { eyebrow: 'Operación de hoy', title: 'Panel de control.' },
   reservations: { eyebrow: 'Agenda', title: 'Reservas.' },
-  calendar: { eyebrow: 'Agenda visual', title: 'Calendario.' },
+  calendar: { eyebrow: 'Vista mensual', title: 'Calendario.' },
   clients: { eyebrow: 'Directorio', title: 'Clientes.' },
-  resources: { eyebrow: 'Configuración', title: 'Recursos.' },
-  services: { eyebrow: 'Configuración', title: 'Tipos de servicio.' },
-  users: { eyebrow: 'Administración', title: 'Vendedores.' },
+  resources: { eyebrow: 'Configuración', title: 'Espacios.' },
+  services: { eyebrow: 'Configuración', title: 'Opciones de reserva.' },
+  users: { eyebrow: 'Administración', title: 'Usuarios.' },
 }
 const activeDetails = computed(() => sectionDetails[activeSection.value])
 
 function navigate(section: AppSection) {
   if (section === 'users' && !auth.isAdmin) return
-  reservationFocusId.value = null
-  reservationInitialDate.value = null
-  activeSection.value = section
+  void router.push({ name: sectionRoutes[section] })
 }
 
 function editCalendarReservation(id: number) {
-  navigate('reservations')
-  reservationFocusId.value = id
+  void router.push({ name: 'reservations', query: { reserva: String(id) } })
 }
 
 function createCalendarReservation(date: string) {
-  navigate('reservations')
-  reservationInitialDate.value = date
+  void router.push({ name: 'reservations', query: { fecha: date } })
 }
 
 function handleSessionExpired() {
@@ -72,13 +79,14 @@ onMounted(async () => {
   window.addEventListener('reservas:auth-required', handleSessionExpired)
   await Promise.allSettled([
     reservations.load(),
-    clients.load(),
+    clients.load(1, 10),
     catalog.loadResources(),
     catalog.loadServiceTypes(),
   ])
   try {
     stopNotifications = await connectReservationNotifications(() => {
       void reservations.load().catch(() => undefined)
+      void catalog.loadServiceTypes().catch(() => undefined)
     })
     liveConnection.value = 'connected'
   } catch {
@@ -101,7 +109,9 @@ function logout() {
   <div class="app-shell">
     <AppSidebar
       :active-section="activeSection"
-      :reservation-count="reservations.items.length"
+      :reservation-count="
+        reservations.items.filter((item) => item.estado === 0 || item.estado === 1).length
+      "
       :user-name="auth.user?.name ?? auth.user?.email ?? 'Usuario'"
       :roles="auth.user?.roles ?? []"
       @navigate="navigate"
@@ -118,8 +128,8 @@ function logout() {
             liveConnection === 'connected'
               ? 'ACTUALIZACIÓN EN VIVO'
               : liveConnection === 'connecting'
-                ? 'CONECTANDO SIGNALR'
-                : 'API HTTP'
+                ? 'CONECTANDO'
+                : 'SIN CONEXIÓN EN VIVO'
           }}</span
           ><button class="button button-quiet logout-button" @click="logout">Cerrar sesión</button>
         </div>
@@ -134,23 +144,15 @@ function logout() {
         <DashboardSection
           v-if="activeSection === 'overview'"
           :reservations="reservations.items"
-          :clients="clients.page.items"
           :resources="catalog.resources"
           :loading="reservations.loading"
           :error="reservations.error"
           @open-reservations="navigate('reservations')"
         />
-        <ReservationsPage
-          v-else-if="activeSection === 'reservations'"
-          :focus-reservation-id="reservationFocusId"
-          :initial-date="reservationInitialDate"
-        />
+        <ReservationsPage v-else-if="activeSection === 'reservations'" />
         <CalendarSection
           v-else-if="activeSection === 'calendar'"
           :reservations="reservations.items"
-          :clients="clients.page.items"
-          :resources="catalog.resources"
-          :service-types="catalog.serviceTypes"
           :today-key="todayKey"
           @open-reservation="editCalendarReservation"
           @new-reservation="createCalendarReservation"

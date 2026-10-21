@@ -42,7 +42,7 @@ export const useCatalogStore = defineStore('catalog', () => {
       return result
     } catch (cause) {
       error.value =
-        cause instanceof Error ? cause.message : 'No se pudieron cargar los tipos de servicio.'
+        cause instanceof Error ? cause.message : 'No se pudieron cargar las opciones de reserva.'
       throw cause
     } finally {
       serviceTypesLoading.value = false
@@ -70,7 +70,7 @@ export const useCatalogStore = defineStore('catalog', () => {
       await resourcesService.remove(id)
       await loadResources()
     } catch (cause) {
-      error.value = cause instanceof Error ? cause.message : 'No se pudo eliminar el recurso.'
+      error.value = cause instanceof Error ? cause.message : 'No se pudo archivar el espacio.'
       throw cause
     }
   }
@@ -85,7 +85,7 @@ export const useCatalogStore = defineStore('catalog', () => {
       await loadServiceTypes()
       return result
     } catch (cause) {
-      error.value = cause instanceof Error ? cause.message : 'No se pudo guardar el servicio.'
+      error.value = cause instanceof Error ? cause.message : 'No se pudo guardar la opción.'
       throw cause
     }
   }
@@ -96,7 +96,7 @@ export const useCatalogStore = defineStore('catalog', () => {
       await serviceTypesService.remove(id)
       await loadServiceTypes()
     } catch (cause) {
-      error.value = cause instanceof Error ? cause.message : 'No se pudo eliminar el servicio.'
+      error.value = cause instanceof Error ? cause.message : 'No se pudo archivar la opción.'
       throw cause
     }
   }

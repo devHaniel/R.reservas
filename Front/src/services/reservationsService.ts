@@ -47,6 +47,12 @@ export const reservationsService = {
       body: { ...reservation, id },
     })
   },
+  changeStatus(id: number, estado: number) {
+    return apiRequest<Reservation>(`/api/reservas/${id}/estado`, {
+      method: 'PATCH',
+      body: { estado },
+    })
+  },
   remove(id: number) {
     return apiRequest<void>(`/api/reservas/${id}`, { method: 'DELETE' })
   },

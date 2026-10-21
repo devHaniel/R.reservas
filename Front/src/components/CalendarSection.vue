@@ -2,21 +2,13 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import type {
-  Client,
-  ReservableResource,
-  Reservation,
-  ReservationStatus,
-  ServiceType,
-} from '../types/api'
+import type { Reservation, ReservationStatus } from '../types/api'
 import { reservationsService } from '../services/reservationsService'
 import { claveFecha, formatearFechaLarga, formatearHora } from '../utils/fechas'
+import { formatearMoneda } from '../utils/formato'
 
 const props = defineProps<{
   reservations: Reservation[]
-  clients: Client[]
-  resources: ReservableResource[]
-  serviceTypes: ServiceType[]
   todayKey: string
 }>()
 
@@ -119,10 +111,19 @@ const selectedReservations = computed(() =>
   ),
 )
 const activeReservationCount = computed(
-  () => selectedReservations.value.filter((item) => item.estado !== 2).length,
+  () =>
+    selectedReservations.value.filter((item) => item.estado === 0 || item.estado === 1).length,
+)
+const completedReservationCount = computed(
+  () => selectedReservations.value.filter((item) => item.estado === 3).length,
 )
 const cancelledReservationCount = computed(
   () => selectedReservations.value.filter((item) => item.estado === 2).length,
+)
+const selectedDayRevenue = computed(() =>
+  selectedReservations.value
+    .filter((item) => item.estado !== 2)
+    .reduce((total, item) => total + Number(item.precio || 0), 0),
 )
 
 function changeMonth(amount: number) {
@@ -137,18 +138,6 @@ function selectDay(key: string) {
   selectedDate.value = key
   const date = new Date(`${key}T12:00:00`)
   if (date.getMonth() !== displayedMonth.value.getMonth()) displayedMonth.value = date
-}
-
-function clientName(id: number) {
-  return props.clients.find((client) => client.id === id)?.nombre ?? `Cliente #${id}`
-}
-
-function resourceName(id: number) {
-  return props.resources.find((resource) => resource.id === id)?.nombre ?? `Recurso #${id}`
-}
-
-function serviceName(id: number) {
-  return props.serviceTypes.find((service) => service.id === id)?.nombre ?? `Servicio #${id}`
 }
 </script>
 
@@ -209,17 +198,18 @@ function serviceName(id: number) {
       <div class="day-summary">
         <strong>{{ selectedReservations.length }}</strong
         ><span
-          >{{ activeReservationCount }} activas · {{ cancelledReservationCount }} canceladas</span
+          >{{ activeReservationCount }} activas · {{ completedReservationCount }} completadas ·
+          {{ cancelledReservationCount }} canceladas</span
         >
       </div>
       <div v-if="selectedReservations.length" class="selected-day-list">
         <div v-for="item in selectedReservations" :key="item.id" class="day-reservation">
           <div class="day-res-time">{{ formatTime(item.fechaHoraInicio) }}</div>
           <div class="day-res-content">
-            <strong>{{ clientName(item.clienteId) }}</strong>
+            <strong>{{ item.nombreCliente || `Cliente #${item.clienteId}` }}</strong>
             <span
-              >{{ resourceName(item.recursoReservableId) }} ·
-              {{ serviceName(item.tipoServicioId) }}</span
+              >{{ item.nombreRecurso || `Espacio #${item.recursoReservableId}` }} ·
+              {{ item.nombreServicio || `Opción #${item.tipoServicioId}` }}</span
             >
             <span :class="['status-pill', statusClass(item.estado)]">{{
               statusLabel(item.estado)
@@ -240,6 +230,9 @@ function serviceName(id: number) {
         <button class="text-action" @click="emit('newReservation', selectedDate)">
           Crear reserva <span>↗</span>
         </button>
+      </div>
+      <div v-if="selectedReservations.length" class="day-total">
+        <span>Ingreso estimado</span><strong>{{ formatearMoneda(selectedDayRevenue) }}</strong>
       </div>
     </article>
   </section>
