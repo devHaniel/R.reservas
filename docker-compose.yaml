@@ -29,6 +29,21 @@ services:
       Cors__AllowedOrigins__1: "http://localhost:5173"
       Cors__AllowedOrigins__2: "http://localhost:3000"
 
+      # Gmail: solo hacen falta SMTP_USER y SMTP_PASSWORD.
+      # smtp.gmail.com, 587 y SSL ya vienen por defecto; las demás variables
+      # son opcionales para usar otro proveedor.
+      Smtp__Host: "${SMTP_HOST:-smtp.gmail.com}"
+      Smtp__Port: "${SMTP_PORT:-587}"
+      Smtp__User: "${SMTP_USER:-}"
+      Smtp__Password: "${SMTP_PASSWORD:-}"
+      Smtp__From: "${SMTP_FROM:-}"
+      Smtp__FromName: "${SMTP_FROM_NAME:-Reservas}"
+      Smtp__EnableSsl: "${SMTP_ENABLE_SSL:-true}"
+      PublicBooking__NombreNegocio: "${BUSINESS_NAME:-Reservas}"
+      PublicBooking__Pepper: "${PUBLIC_BOOKING_PEPPER:-}"
+      PublicBooking__RecordatorioHorasAntes: "${RECORDATORIO_HORAS_ANTES:-24}"
+      PublicBooking__RecordatorioIntervaloMinutos: "${RECORDATORIO_INTERVALO_MINUTOS:-15}"
+
       BootstrapAdmin__Email: "${BOOTSTRAP_ADMIN_EMAIL}"
       BootstrapAdmin__Password: "${BOOTSTRAP_ADMIN_PASSWORD}"
     depends_on:
