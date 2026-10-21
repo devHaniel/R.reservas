@@ -20,6 +20,7 @@ router.beforeEach((to) => {
   auth.initialize()
   if (to.meta.requiresAuth && !auth.isAuthenticated) return { name: 'login' }
   if (to.name === 'login' && auth.isAuthenticated) return { name: 'home' }
+  if (to.meta.admin === true && !auth.isAdmin) return { name: 'home' }
 })
 
 app.mount('#app')
